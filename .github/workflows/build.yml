@@ -47,7 +47,7 @@ jobs:
           cd /tmp/shairport-sync && git checkout ${{ env.SHAIRPORT_VERSION }}
           
           # 应用 start_threshold 补丁
-          patch -p1 < ${{ github.workspace }}/patches/0001-start_threshold.patch
+          patch -p1 < $GITHUB_WORKSPACE/patches/0001-start_threshold.patch
           
           autoreconf -fi
           ./configure --sysconfdir=/etc --with-alsa \
@@ -70,19 +70,19 @@ jobs:
           cp /out/usr/bin/nqptp /pkg/usr/local/bin/
           
           # 服务文件 & 配置
-          cp ${{ github.workspace }}/files/shairport-sync.conf /pkg/etc/
-          cp ${{ github.workspace }}/files/shairport-sync.conf /pkg/usr/local/etc/
-          cp ${{ github.workspace }}/files/nqptp.service /pkg/usr/lib/systemd/system/
-          cp ${{ github.workspace }}/files/shairport-sync.service /pkg/usr/lib/systemd/system/
-          cp ${{ github.workspace }}/files/install.sh /pkg/
-          cp ${{ github.workspace }}/files/uninstall.sh /pkg/
+          cp $GITHUB_WORKSPACE/files/shairport-sync.conf /pkg/etc/
+          cp $GITHUB_WORKSPACE/files/shairport-sync.conf /pkg/usr/local/etc/
+          cp $GITHUB_WORKSPACE/files/nqptp.service /pkg/usr/lib/systemd/system/
+          cp $GITHUB_WORKSPACE/files/shairport-sync.service /pkg/usr/lib/systemd/system/
+          cp $GITHUB_WORKSPACE/files/install.sh /pkg/
+          cp $GITHUB_WORKSPACE/files/uninstall.sh /pkg/
           echo "${VERSION}" > /pkg/VERSION
           
           chmod +x /pkg/install.sh /pkg/uninstall.sh
           
-          cd /pkg && zip -r "${{ github.workspace }}/${PKG}.zip" .
+          cd /pkg && zip -r "$GITHUB_WORKSPACE/${PKG}.zip" .
           echo "pkg_name=${PKG}" >> $GITHUB_OUTPUT
-          echo "pkg_file=${{ github.workspace }}/${PKG}.zip" >> $GITHUB_OUTPUT
+          echo "pkg_file=$GITHUB_WORKSPACE/${PKG}.zip" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
