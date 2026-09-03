@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PKG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VERSION="5.2.2"
+VERSION="4.3.5"
 
 echo "=== SOTM shairport-sync AirPlay 2 升级包 v${VERSION} ==="
 

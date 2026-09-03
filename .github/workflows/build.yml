@@ -1,4 +1,4 @@
-name: Build shairport-sync 5.2.2 + nqptp for SOTM Fedora 36
+name: Build shairport-sync 4.3.5 + nqptp for SOTM Fedora 36
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     tags: ['shairport-sync-v*']
 
 env:
-  SHAIRPORT_VERSION: "5.2.2"
+  SHAIRPORT_VERSION: "4.3.5"
   NQPTP_VERSION: "1.2.8"
 
 jobs:
@@ -19,18 +19,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build dependencies (Fedora 36)
+      - name: Install build dependencies (Fedora 36 + RPM Fusion)
         run: |
-          # NOTE: deliberately NOT installing ffmpeg/RPM-Fusion. shairport-sync 5.2.2
-          # requires FFmpeg 5.1+ (new AVChannelLayout/AV_CHAN_* API), but Fedora 36
-          # RPM Fusion only ships FFmpeg 4.4. Building against it fails. Without
-          # ffmpeg, configure skips the ffmpeg resample path; AirPlay 2 AAC is
-          # decoded by shairport-sync's built-in decoder and resampling uses soxr.
+          # shairport-sync 4.3.5 AirPlay 2 requires libavutil/libavcodec/libavformat.
+          # ffmpeg is not in official Fedora repos; add RPM Fusion free repo
+          # (Fedora 36 provides FFmpeg 4.4, which 4.3.5 is compatible with).
+          dnf install -y \
+            https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-36.noarch.rpm
           dnf install -y \
             make automake gcc gcc-c++ git autoconf patch \
             avahi-devel libconfig-devel openssl-devel popt-devel soxr-devel \
-            libplist-devel libsodium-devel libgcrypt-devel \
+            ffmpeg ffmpeg-devel libplist-devel libsodium-devel libgcrypt-devel \
             libuuid-devel vim-common alsa-lib-devel \
+            systemd-devel dbus-devel \
             kernel-devel kernel-headers
 
       - name: Build nqptp ${{ env.NQPTP_VERSION }}

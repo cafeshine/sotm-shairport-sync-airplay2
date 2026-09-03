@@ -1,12 +1,12 @@
 # SOTM shairport-sync AirPlay 2 升级包
 
-基于 shairport-sync 5.2.2 源码编译，支持 AirPlay 1+2，适配 SOTM Eunhasu (Fedora 36)。
+基于 shairport-sync 4.3.5 源码编译，支持 AirPlay 1+2，适配 SOTM Eunhasu (Fedora 36)。
 
 ## 组件
 
 | 组件 | 版本 | 说明 |
 |------|------|------|
-| shairport-sync | 5.2.2 | AirPlay 1+2, 源码编译, glibc 2.35 |
+| shairport-sync | 4.3.5 | AirPlay 1+2, 源码编译, glibc 2.35 |
 | nqptp | 1.2.8 | PTP 时钟同步, AirPlay 2 必需 |
 
 ## 关键补丁
@@ -39,10 +39,10 @@
 ## 部署
 
 ```bash
-scp shairport-sync-airplay2-sotm-fc36-v5.2.2.zip root@<sotm-ip>:/tmp/
+scp shairport-sync-airplay2-sotm-fc36-v4.3.5.zip root@<sotm-ip>:/tmp/
 ssh root@<sotm-ip>
-cd /tmp && unzip shairport-sync-airplay2-sotm-fc36-v5.2.2.zip
-cd shairport-sync-airplay2-sotm-fc36-v5.2.2
+cd /tmp && unzip shairport-sync-airplay2-sotm-fc36-v4.3.5.zip
+cd shairport-sync-airplay2-sotm-fc36-v4.3.5
 bash install.sh
 ```
 
@@ -81,8 +81,8 @@ workflow 在 `fedora:36` 容器中编译，产出 zip 发布到 GitHub Releases�
 手动触发：
 ```bash
 # 打 tag
-git tag shairport-sync-v5.2.2
-git push origin shairport-sync-v5.2.2
+git tag shairport-sync-v4.3.5
+git push origin shairport-sync-v4.3.5
 ```
 
 或在 GitHub Actions 页面手动触发 `build.yml`。

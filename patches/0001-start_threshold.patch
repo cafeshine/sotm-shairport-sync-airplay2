@@ -1,14 +1,14 @@
 diff --git a/audio_alsa.c b/audio_alsa.c
-index 7571a37..0533162 100644
+index 092781a..c9fa95b 100644
 --- a/audio_alsa.c
 +++ b/audio_alsa.c
-@@ -874,6 +874,9 @@ static int actual_open_alsa_device() {
-       return ret;
-     }
+@@ -744,6 +744,9 @@ static int actual_open_alsa_device(int do_auto_setup) {
+     return ret;
+   }
  
-+    // Force start threshold to 1 frame so the PCM starts playing immediately
-+    // after the first write. Required for Diretta write-through ALSA driver.
-+    ret = snd_pcm_sw_params_set_start_threshold(alsa_handle, alsa_swparams, 1);
-     ret = snd_pcm_sw_params_set_tstamp_mode(alsa_handle, alsa_swparams, SND_PCM_TSTAMP_ENABLE);
-     if (ret < 0) {
-       warn("alsa: can't enable timestamp mode of device: \"%s\": %s.", alsa_out_dev,
++  // Force start threshold to 1 frame so the PCM starts playing immediately
++  // after the first write. Required for Diretta write-through ALSA driver.
++  ret = snd_pcm_sw_params_set_start_threshold(alsa_handle, alsa_swparams, 1);
+   ret = snd_pcm_sw_params_set_tstamp_mode(alsa_handle, alsa_swparams, SND_PCM_TSTAMP_ENABLE);
+   if (ret < 0) {
+     warn("audio_alsa: Can't enable timestamp mode of device: \"%s\": %s.", alsa_out_dev,
