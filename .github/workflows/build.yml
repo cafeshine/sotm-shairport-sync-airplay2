@@ -1,0 +1,136 @@
+name: Build shairport-sync 5.2.2 + nqptp for SOTM Fedora 36
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['shairport-sync-v*']
+
+env:
+  SHAIRPORT_VERSION: "5.2.2"
+  NQPTP_VERSION: "1.2.8"
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    container:
+      image: fedora:36
+      options: --user root
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies (Fedora 36)
+        run: |
+          dnf install -y \
+            make automake gcc gcc-c++ git autoconf \
+            avahi-devel libconfig-devel openssl-devel popt-devel soxr-devel \
+            ffmpeg ffmpeg-devel libplist-devel libsodium-devel libgcrypt-devel \
+            libuuid-devel vim-common alsa-lib-devel \
+            kernel-devel kernel-headers \
+            systemd-devel dbus-devel
+
+      - name: Build nqptp ${{ env.NQPTP_VERSION }}
+        run: |
+          git clone https://github.com/mikebrady/nqptp.git /tmp/nqptp
+          cd /tmp/nqptp && git checkout ${{ env.NQPTP_VERSION }}
+          autoreconf -fi
+          ./configure --prefix=/usr --sysconfdir=/etc
+          make -j$(nproc)
+          make DESTDIR=/out install
+
+      - name: Build shairport-sync ${{ env.SHAIRPORT_VERSION }} (AirPlay 2)
+        run: |
+          git clone https://github.com/mikebrady/shairport-sync.git /tmp/shairport-sync
+          cd /tmp/shairport-sync && git checkout ${{ env.SHAIRPORT_VERSION }}
+          
+          # 应用 start_threshold 补丁
+          patch -p1 < ${{ github.workspace }}/patches/0001-start_threshold.patch
+          
+          autoreconf -fi
+          ./configure --sysconfdir=/etc --with-alsa \
+            --with-soxr --with-avahi --with-ssl=openssl \
+            --with-systemd --with-airplay-2 --with-metadata
+          make -j$(nproc)
+          make DESTDIR=/out install
+
+      - name: Assemble deployment package
+        id: pkg
+        run: |
+          VERSION="${GITHUB_REF_NAME#shairport-sync-v}"
+          [[ -z "$VERSION" ]] && VERSION="${{ env.SHAIRPORT_VERSION }}"
+          PKG="shairport-sync-airplay2-sotm-fc36-v${VERSION}"
+          
+          mkdir -p "/pkg/usr/local/bin" "/pkg/etc" "/pkg/usr/lib/systemd/system" "/pkg/usr/local/etc"
+          
+          # 二进制
+          cp /out/usr/local/bin/shairport-sync /pkg/usr/local/bin/
+          cp /out/usr/bin/nqptp /pkg/usr/local/bin/
+          
+          # 服务文件 & 配置
+          cp ${{ github.workspace }}/files/shairport-sync.conf /pkg/etc/
+          cp ${{ github.workspace }}/files/shairport-sync.conf /pkg/usr/local/etc/
+          cp ${{ github.workspace }}/files/nqptp.service /pkg/usr/lib/systemd/system/
+          cp ${{ github.workspace }}/files/shairport-sync.service /pkg/usr/lib/systemd/system/
+          cp ${{ github.workspace }}/files/install.sh /pkg/
+          cp ${{ github.workspace }}/files/uninstall.sh /pkg/
+          echo "${VERSION}" > /pkg/VERSION
+          
+          chmod +x /pkg/install.sh /pkg/uninstall.sh
+          
+          cd /pkg && zip -r "${{ github.workspace }}/${PKG}.zip" .
+          echo "pkg_name=${PKG}" >> $GITHUB_OUTPUT
+          echo "pkg_file=${{ github.workspace }}/${PKG}.zip" >> $GITHUB_OUTPUT
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shairport-sync-sotm-fc36
+          path: shairport-sync-airplay2-sotm-fc36-*.zip
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/shairport-sync-v')
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: shairport-sync-sotm-fc36
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: shairport-sync-airplay2-sotm-fc36-*.zip
+          body: |
+            ## SOTM Fedora 36 shairport-sync AirPlay 2 升级包
+
+            | 组件 | 版本 | 说明 |
+            |------|------|------|
+            | shairport-sync | ${{ env.SHAIRPORT_VERSION }} | AirPlay 1+2, 源码编译, glibc 2.35 |
+            | nqptp | ${{ env.NQPTP_VERSION }} | PTP 时钟同步, AirPlay 2 必需 |
+
+            ### 关键补丁
+            - `start_threshold=1`: 适配 Diretta 写穿透 ALSA 驱动
+
+            ### SOTM 适配配置
+            - `output_device=plughw:0,0` (DirettaDB16 / Tone2 Pro)
+            - `audio_backend_buffer_desired_length_in_seconds=5.0` (解决 iOS 26.4+ seek 卡死)
+            - `disable_synchronization=yes` (防 Diretta xrun)
+            - 复用 `audio.slice` (Nice=-18, RR, prio=49)
+
+            ### 部署
+            ```bash
+            scp shairport-sync-airplay2-sotm-fc36-v${{ env.SHAIRPORT_VERSION }}.zip root@<sotm-ip>:/tmp/
+            ssh root@<sotm-ip>
+            cd /tmp && unzip shairport-sync-airplay2-sotm-fc36-v${{ env.SHAIRPORT_VERSION }}.zip
+            cd shairport-sync-airplay2-sotm-fc36-v${{ env.SHAIRPORT_VERSION }}
+            bash install.sh
+            ```
+
+            ### 回滚
+            ```bash
+            bash uninstall.sh
+            ```
+          tag_name: shairport-sync-v${{ env.SHAIRPORT_VERSION }}

@@ -1,0 +1,11 @@
+--- audio_alsa.c.orig	2026-06-09 00:00:00.000000000 +0000
++++ audio_alsa.c	2026-06-09 00:00:00.000000000 +0000
+@@ -453,6 +453,9 @@
+    // alsa_swparams configuration
+    alsa_error = snd_pcm_sw_params_current(alsa_handle, alsa_swparams);
+  
++  // Force start threshold to 1 frame so the PCM starts playing immediately
++  // after the first write. Required for Diretta write-through ALSA driver.
++  alsa_error = snd_pcm_sw_params_set_start_threshold(alsa_handle, alsa_swparams, 1);
+    // Fill the silence buffer
+    alsa_silence_buffer_size = alsa_frames_per_chunk_size * (uint32_t)(alsa_frame_size);

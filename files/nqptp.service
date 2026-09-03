@@ -1,0 +1,21 @@
+[Unit]
+Description=NQPTP Precision Time Protocol Daemon (AirPlay 2)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=nqptp
+Group=nqptp
+ExecStart=/usr/local/bin/nqptp
+Restart=on-failure
+RestartSec=2
+LimitRTPRIO=98
+LimitMEMLOCK=infinity
+Nice=-19
+Slice=audio.slice
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=50
+
+[Install]
+WantedBy=multi-user.target

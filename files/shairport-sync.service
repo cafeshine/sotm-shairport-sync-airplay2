@@ -1,0 +1,26 @@
+[Unit]
+Description=ShairportSync AirPlay 1+2 Audio Receiver
+Wants=network-online.target avahi-daemon.service nqptp.service
+After=network-online.target avahi-daemon.service nqptp.service
+Requires=avahi-daemon.service
+
+[Service]
+Type=notify
+User=shairport-sync
+Group=shairport-sync
+Slice=audio.slice
+ExecStart=/usr/local/bin/shairport-sync -c /etc/shairport-sync.conf
+Restart=on-failure
+RestartSec=2
+LimitRTPRIO=98
+LimitMEMLOCK=infinity
+Nice=-18
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=49
+IOSchedulingClass=realtime
+IOSchedulingPriority=1
+StandardOutput=null
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
